@@ -20,21 +20,25 @@ wheels/
 .installed.cfg
 *.egg
 
-# Chrome data
-chrome/userdata/
-chrome/cache/
-chrome/*.exe
+# Virtual Environment
+windsurf_env/
+venv/
+ENV/
 
 # Logs
 *.log
+chromedriver.log
+error.log
 output.log
+register.log
 
-# Environment
-.env
-.venv
-env/
-venv/
-ENV/
+# Chrome related files
+chrome/
+*.dll
+*.exe
+*.pak
+*.bin
+*.dat
 
 # IDE
 .idea/

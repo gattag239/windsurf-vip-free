@@ -4,6 +4,27 @@
 这是一个自动注册 Windsurf 账号的工具，你只需要一个邮箱即可无限使用windsurfpro用户功能。
 This is an automatic registration tool for Windsurf accounts, allowing you to use Windsurf Pro features unlimitedly with just one email.
 
+## 使用前准备
+## Prerequisites
+
+1. 下载 Chrome 浏览器便携版
+1. Download Chrome Portable Version
+
+   - 下载地址：https://www.google.com/chrome/
+   - Download URL: https://www.google.com/chrome/
+   - 将下载的 Chrome 文件解压到项目根目录的 `chrome` 文件夹中
+   - Extract the downloaded Chrome files to the `chrome` folder in the project root directory
+
+2. 下载 ChromeDriver
+2. Download ChromeDriver
+
+   - 下载地址：https://chromedriver.chromium.org/downloads
+   - Download URL: https://chromedriver.chromium.org/downloads
+   - 确保 ChromeDriver 版本与你的 Chrome 浏览器版本匹配
+   - Make sure the ChromeDriver version matches your Chrome browser version
+   - 将 chromedriver.exe 放入 `chrome` 文件夹中
+   - Place chromedriver.exe in the `chrome` folder
+
 ## 原理
 ## Principle
 
