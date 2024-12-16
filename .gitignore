@@ -34,6 +34,7 @@ register.log
 
 # Chrome related files
 chrome/
+chrome/chrome.dll
 *.dll
 *.exe
 *.pak
