@@ -9,6 +9,8 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import ctypes
 import winreg
+import webbrowser
+import sys
 
 # GUI settings
 WINDOW_TITLE = "Windsurf账号注册工具（无限使用pro用户功能）"
@@ -27,8 +29,33 @@ EMAIL_DOMAINS = [
     "gmail.com"
 ]
 
+# URLs
+REGISTER_URL = "https://codeium.com/account/register"
+PROFILE_URL = "https://codeium.com/profile"
+ONBOARDING_NAME_URL = "https://codeium.com/onboarding/name"
+ONBOARDING_ABOUT_URL = "https://codeium.com/onboarding/about-user"
+ONBOARDING_SOURCE_URL = "https://codeium.com/account/onboarding/source"
+CHROME_DOWNLOAD_URL = "https://www.google.com/chrome/"
+CHROMEDRIVER_DOWNLOAD_URL = "https://googlechromelabs.github.io/chrome-for-testing/"
+
+def get_root_dir():
+    """获取程序根目录"""
+    if getattr(sys, 'frozen', False):
+        # 如果是打包后的程序
+        return os.path.dirname(sys.executable)
+    else:
+        # 如果是开发环境
+        return os.path.dirname(os.path.abspath(__file__))
+
 # 项目根目录
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = get_root_dir()
+
+def ensure_chrome_directory():
+    """确保chrome目录存在"""
+    chrome_dir = os.path.join(ROOT_DIR, "chrome")
+    if not os.path.exists(chrome_dir):
+        os.makedirs(chrome_dir)
+    return chrome_dir
 
 def get_chrome_path():
     """获取Chrome路径，优先使用项目目录下的Chrome"""
@@ -94,6 +121,17 @@ def get_project_chromedriver_path():
     driver_path = os.path.join(ROOT_DIR, "chrome", "chromedriver.exe")
     return driver_path if os.path.exists(driver_path) else None
 
+def open_chrome_download():
+    """打开Chrome下载页面"""
+    webbrowser.open(CHROME_DOWNLOAD_URL)
+
+def open_chromedriver_download():
+    """打开ChromeDriver下载页面"""
+    webbrowser.open(CHROMEDRIVER_DOWNLOAD_URL)
+
+# 确保chrome目录存在
+ensure_chrome_directory()
+
 # Chrome settings
 CHROME_EXECUTABLE = get_chrome_path()
 CHROME_VERSION = get_chrome_version()
@@ -116,13 +154,6 @@ LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 os.makedirs(CHROME_USER_DATA_DIR, exist_ok=True)
 os.makedirs(CHROME_TEMP_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
-
-# URLs
-REGISTER_URL = "https://codeium.com/account/register"
-PROFILE_URL = "https://codeium.com/profile"
-ONBOARDING_NAME_URL = "https://codeium.com/onboarding/name"
-ONBOARDING_ABOUT_URL = "https://codeium.com/onboarding/about-user"
-ONBOARDING_SOURCE_URL = "https://codeium.com/account/onboarding/source"
 
 # Timeouts
 PAGE_LOAD_TIMEOUT = 300  # 增加页面加载超时时间到5分钟

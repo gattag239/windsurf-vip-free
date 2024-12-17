@@ -1,91 +1,68 @@
-# Windsurf-free Account Registration Assistant (Unlimited Trial)
+# Windsurf VIP 账号注册工具
 
-[English](#windsurf-free-account-registration-assistant-unlimited-trial) | [中文](#windsurf-free-账号自动注册助手同一邮箱无限试用)
+这是一个自动化的 Windsurf VIP 账号注册工具，可以帮助你快速注册账号并获取 VIP 功能。
 
-This is an automatic registration tool for Windsurf accounts, allowing you to use Windsurf Pro features unlimitedly with just one email.
+## 运行要求
 
-## Prerequisites
+### Chrome 浏览器
 
-1. Download Chrome Portable Version
-   - Download URL: https://www.google.com/chrome/
-   - Extract the downloaded Chrome files to the `chrome` folder in the project root directory
+你有两种方式来配置 Chrome 浏览器：
 
-2. Download ChromeDriver
-   - Download URL: https://chromedriver.chromium.org/downloads
-   - Make sure the ChromeDriver version matches your Chrome browser version
-   - Place chromedriver.exe in the `chrome` folder
+1. **使用便携版 Chrome**（推荐）
+   - 下载 Chrome 便携版
+   - 将解压后的文件夹重命名为 `chrome`
+   - 将整个 `chrome` 文件夹放入程序运行目录
+   - 确保 `chrome` 文件夹中包含 `chrome.exe`
 
-## How It Works
+2. **使用系统安装的 Chrome**
+   - 从 [Chrome 官网](https://www.google.com/chrome/) 下载并安装 Chrome 浏览器
+   - 程序会自动检测系统中已安装的 Chrome
 
-1. Windsurf and Cursor offer free trials for new users, distinguishing new users primarily through email addresses
-2. Gmail and 2925.com support email aliases, allowing multiple email aliases for one main email address. Emails sent to aliases are delivered to the main inbox. Alias format: username+number@gmail.com (e.g., username+001@gmail.com, username+002@gmail.com...)
-3. This project combines these two features for implementation
+### ChromeDriver
 
-## Implementation Process
+你同样有两种方式来配置 ChromeDriver：
 
-This project's code was written with assistance from Windsurf AI, following these steps:
+1. **放置在程序目录**（推荐）
+   - 从 [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/) 下载与你的 Chrome 版本匹配的 ChromeDriver
+   - 将 `chromedriver.exe` 放入程序运行目录的 `chrome` 文件夹中
 
-1. User selects email provider (currently supports 2925.com and gmail.com)
-2. User inputs username and password, and selects email alias
-3. Program automatically executes registration process
-4. Automatically logs into Windsurf after creating new account
-5. Can continue creating new users after trial expiration
+2. **使用系统中的 ChromeDriver**
+   - 确保 ChromeDriver 已添加到系统环境变量中
+   - 版本必须与 Chrome 浏览器版本匹配
 
-## Usage Instructions
+## 目录结构
 
-1. Ensure Python 3.8 or higher is installed
-2. Install dependencies: `pip install -r requirements.txt`
-3. Run the program: `python main.py`
-4. Use the newly registered email to log in to Windsurf
-5. Can continue creating new users after trial expiration, but you only need one main email address
+程序运行目录应该包含以下文件和文件夹：
 
-## Disclaimer
+```
+windsurf-vip-free/
+├── chrome/                  # Chrome 相关文件夹
+│   ├── chrome.exe          # Chrome 便携版（可选）
+│   └── chromedriver.exe    # ChromeDriver（推荐放在这里）
+└── windsurf-vip-free.exe   # 主程序
+```
 
-This project is for learning and research purposes only. Not for commercial use. Users bear all responsibility for any consequences of using this project.
+## 常见问题
 
----
+1. **提示找不到 Chrome**
+   - 检查是否已安装 Chrome 或正确放置便携版 Chrome
+   - 如果使用便携版，确保 `chrome.exe` 位于 `chrome` 文件夹中
+   - 如果使用系统安装版，确保 Chrome 已正确安装
 
-# Windsurf-free 账号自动注册助手（同一邮箱无限试用）
+2. **提示找不到 ChromeDriver**
+   - 确保 ChromeDriver 版本与 Chrome 版本匹配
+   - 检查 ChromeDriver 是否正确放置在 `chrome` 文件夹中
 
-[English](#windsurf-free-account-registration-assistant-unlimited-trial) | [中文](#windsurf-free-账号自动注册助手同一邮箱无限试用)
+3. **Chrome 版本与 ChromeDriver 不匹配**
+   - 访问 [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/) 下载对应版本的 ChromeDriver
+   - 将新的 ChromeDriver 放入 `chrome` 文件夹中
 
-这是一个自动注册 Windsurf 账号的工具，你只需要一个邮箱即可无限使用windsurfpro用户功能。
+## 注意事项
 
-## 使用前准备
+- 建议使用便携版 Chrome 和本地 ChromeDriver，这样可以确保版本匹配和稳定性
+- 程序首次运行时会自动创建必要的文件夹
+- 如果遇到问题，程序会自动打开相关下载页面引导你完成安装
 
-1. 下载 Chrome 浏览器便携版
-   - 下载地址：https://www.google.com/chrome/
-   - 将下载的 Chrome 文件解压到项目根目录的 `chrome` 文件夹中
+## 技术支持
 
-2. 下载 ChromeDriver
-   - 下载地址：https://chromedriver.chromium.org/downloads
-   - 确保 ChromeDriver 版本与你的 Chrome 浏览器版本匹配
-   - 将 chromedriver.exe 放入 `chrome` 文件夹中
-
-## 原理
-
-1. Windsurf、Cursor 新用户赠送试用，区分是否新用户一般使用的是邮箱
-2. 谷歌邮箱和2925邮箱支持使用邮箱别名功能，即注册一个主邮箱可以使用多个邮箱别名，但最终邮件仍发送到主邮箱，别名格式一般为：用户名+序号@gmail.com，即用户名+001@gmail.com、用户名+002@gmail.com...
-3. 把上述2个知识点结合，就是本项目的实现原理
-
-## 实现过程
-
-本项目由 Windsurf AI 协助编写代码，主要步骤如下：
-
-1. 用户选择邮箱（目前支持2925.com和gmail.com）
-2. 用户输入用户名和密码，并选择邮箱别名
-3. 程序自动执行注册流程
-4. 创建新的账号后自动登录 Windsurf
-5. 试用到期后可继续运行本项目，创建新的用户
-
-## 使用说明
-
-1. 确保已安装 Python 3.8 或更高版本
-2. 安装依赖：`pip install -r requirements.txt`
-3. 运行程序：`python main.py`
-4. 使用新注册的邮箱登录 Windsurf
-5. 试用到期后可继续运行本项目，创建新的用户，但你的主邮箱只需要一个
-
-## 免责声明
-
-本项目仅供学习和研究使用，请勿用于商业用途。使用本项目产生的任何后果由使用者自行承担。
+如果遇到问题，请查看程序目录下的 `error.log` 文件了解详细错误信息。

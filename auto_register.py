@@ -28,7 +28,11 @@ from config import (
     ONBOARDING_ABOUT_URL,
     ONBOARDING_SOURCE_URL,
     WINDOW_WIDTH,
-    WINDOW_HEIGHT
+    WINDOW_HEIGHT,
+    open_chrome_download,
+    open_chromedriver_download,
+    get_chrome_path,
+    get_project_chromedriver_path
 )
 from utils import show_message, clean_all_chrome_data, check_chrome_versions
 import ctypes
@@ -46,12 +50,28 @@ class RegistrationBot:
     def setup_driver(self):
         """Setup Chrome driver with custom options"""
         try:
+            # 检查 Chrome 是否存在
+            chrome_path = get_chrome_path()
+            if not chrome_path:
+                logging.error("未找到Chrome浏览器")
+                show_message("错误", "未找到Chrome浏览器。即将打开Chrome下载页面，请安装后重试。")
+                open_chrome_download()
+                return False
+
+            # 检查 ChromeDriver 是否存在
+            chromedriver_path = get_project_chromedriver_path()
+            if not chromedriver_path:
+                logging.error("未找到ChromeDriver")
+                show_message("错误", "未找到ChromeDriver。即将打开ChromeDriver下载页面，请下载对应版本后放入chrome目录。")
+                open_chromedriver_download()
+                return False
+
             # Clean all Chrome data
             clean_all_chrome_data()
             
             # Setup Chrome options
             options = webdriver.ChromeOptions()
-            options.binary_location = CHROME_EXECUTABLE
+            options.binary_location = chrome_path
             
             # 基本设置
             options.add_argument('--no-sandbox')
@@ -73,7 +93,7 @@ class RegistrationBot:
             options.add_argument(f'--disk-cache-dir={CHROME_TEMP_DIR}')
             
             # 创建Chrome服务
-            service = Service(executable_path=CHROME_DRIVER)
+            service = Service(executable_path=chromedriver_path)
             
             # 创建Chrome驱动
             self.driver = webdriver.Chrome(service=service, options=options)
@@ -89,7 +109,18 @@ class RegistrationBot:
             return True
             
         except Exception as e:
-            logging.error(f"设置Chrome驱动时出错: {e}")
+            error_msg = str(e)
+            logging.error(f"设置Chrome驱动时出错: {error_msg}")
+            
+            if "chromedriver" in error_msg.lower():
+                show_message("错误", "ChromeDriver版本可能与Chrome不匹配。即将打开ChromeDriver下载页面，请下载对应版本。")
+                open_chromedriver_download()
+            elif "chrome" in error_msg.lower():
+                show_message("错误", "Chrome浏览器可能未正确安装。即将打开Chrome下载页面。")
+                open_chrome_download()
+            else:
+                show_message("错误", f"设置Chrome驱动时出错: {error_msg}")
+            
             if hasattr(self, 'driver') and self.driver:
                 try:
                     self.driver.quit()
