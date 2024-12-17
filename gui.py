@@ -39,7 +39,7 @@ class RegistrationGUI:
         self.create_widgets()
         
         # Setup logger
-        self.logger = setup_logger(self.log_display)
+        self.logger = setup_logger(self)  # 传入 self，而不是 self.log_display
         
     def create_widgets(self):
         # Title
@@ -166,7 +166,7 @@ class RegistrationGUI:
         
         self.log_display = ttkb.Text(
             log_frame,
-            height=20,  # 增加日志显示区域高度
+            height=20,
             wrap=tk.WORD,
             font=("Consolas", 10)
         )
@@ -240,12 +240,18 @@ class RegistrationGUI:
         
     def update_log(self, message):
         """Update log display with new message"""
-        self.log_display.configure(state="normal")
-        self.log_display.insert(tk.END, message + "\n")
-        self.log_display.see(tk.END)  # 自动滚动到最新内容
-        self.log_display.configure(state="disabled")
-        self.root.update()  # 强制更新界面
-        
+        if not hasattr(self, 'log_display'):
+            return
+            
+        try:
+            self.log_display.configure(state="normal")
+            self.log_display.insert(tk.END, message + "\n")
+            self.log_display.see(tk.END)  # 自动滚动到最新内容
+            self.log_display.configure(state="disabled")
+            self.root.update()  # 强制更新界面
+        except Exception as e:
+            print(f"Error updating log: {e}")
+            
     def run(self):
         """Start the GUI event loop"""
         self.root.mainloop()

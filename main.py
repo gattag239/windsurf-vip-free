@@ -3,6 +3,7 @@ Main entry point for the Windsurf account registration program
 """
 import sys
 import logging
+from tkinter import messagebox
 from gui import RegistrationGUI
 from auto_register import RegistrationBot
 from utils import format_email, show_message, clean_all_chrome_data
@@ -46,7 +47,7 @@ class RegistrationManager:
             while retry_count < max_retries:
                 # 生成邮箱
                 email = format_email(self.base_email, current_index, self.domain)
-                logging.info(f"开始注册账号 {email}")
+                logger.info(f"开始注册账号 {email}")
                 
                 # 开始注册
                 result = self.bot.register(email, self.password)
@@ -59,7 +60,7 @@ class RegistrationManager:
                     
                 elif result == "EMAIL_EXISTS":
                     # 邮箱已存在，增加序号重试
-                    logging.info(f"账号 {email} 已存在，尝试下一个序号")
+                    logger.info(f"账号 {email} 已存在，尝试下一个序号")
                     current_index += 1
                     retry_count += 1
                     continue
@@ -71,10 +72,10 @@ class RegistrationManager:
                         "页面响应超时，是否重试当前账号？",
                         type_="yesno"
                     ):
-                        logging.info(f"重试账号 {email}")
+                        logger.info(f"重试账号 {email}")
                         continue
                     else:
-                        logging.info("用户取消重试")
+                        logger.info("用户取消重试")
                         break
                         
                 else:
@@ -97,14 +98,14 @@ class RegistrationManager:
         try:
             clean_all_chrome_data()  
         except Exception as e:
-            logging.error(f"Error during cleanup: {e}")
+            logger.error(f"Error during cleanup: {e}")
 
     @classmethod
     def cleanup(cls):
         try:
             clean_all_chrome_data()  
         except Exception as e:
-            logging.error(f"Error during cleanup: {e}")
+            logger.error(f"Error during cleanup: {e}")
 
 def main():
     """Main entry point"""
@@ -120,7 +121,7 @@ def main():
         
         # 设置完整的日志记录器
         global logger
-        logger = setup_logger(gui)
+        logger = setup_logger(gui)  # 直接传入 GUI 实例
         
         # 运行GUI
         gui.run()
@@ -149,4 +150,6 @@ if __name__ == "__main__":
             clean_all_chrome_data()
         except:
             pass
-        input("Press Enter to exit...")
+        # 给用户一些时间看到错误信息
+        import time
+        time.sleep(3)
