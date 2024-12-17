@@ -82,7 +82,7 @@ class RegistrationBot:
             
             # 设置窗口位置和大小
             screen_width = ctypes.windll.user32.GetSystemMetrics(0)
-            x_position = int(screen_width * 0.3)  # 改为屏幕宽度的30%位置
+            x_position = int(screen_width * 0.25)  # 改为屏幕宽度的25%位置
             self.driver.set_window_size(WINDOW_WIDTH, WINDOW_HEIGHT)
             self.driver.set_window_position(x_position, 50)  # 上边距保持50
             
@@ -171,163 +171,271 @@ class RegistrationBot:
     def handle_onboarding(self):
         """Handle onboarding pages after registration"""
         try:
-            # 等待页面跳转到onboarding name页面
-            self.wait.until(lambda driver: ONBOARDING_NAME_URL in driver.current_url)
-            logging.info("正在填写用户名信息...")
-            
-            # 生成随机姓名
-            import random
-            first_names = ["John", "Jane", "Mike", "Sarah", "David", "Emma"]
-            last_names = ["Smith", "Johnson", "Brown", "Davis", "Wilson"]
-            first_name = random.choice(first_names)
-            last_name = random.choice(last_names)
-            
-            # 填写姓名
-            first_name_input = self.wait.until(
-                EC.presence_of_element_located((By.NAME, "firstName"))
+            # 等待页面完全加载
+            self.wait.until(
+                lambda driver: driver.execute_script('return document.readyState') == 'complete'
             )
-            first_name_input.clear()
-            first_name_input.send_keys(first_name)
             
-            last_name_input = self.wait.until(
-                EC.presence_of_element_located((By.NAME, "lastName"))
-            )
-            last_name_input.clear()
-            last_name_input.send_keys(last_name)
+            current_url = self.driver.current_url
+            logging.info(f"当前页面URL: {current_url}")
             
-            # 点击Continue按钮
-            time.sleep(1)  # 等待按钮可点击
-            continue_button = self.wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit']"))
-            )
-            self.driver.execute_script("arguments[0].click();", continue_button)
-            logging.info("已点击Continue按钮")
+            # 处理姓名页面
+            if "onboarding?page=name" in current_url:
+                logging.info("正在填写姓名信息...")
+                try:
+                    # 等待姓名输入框出现
+                    first_name_input = self.wait.until(
+                        EC.presence_of_element_located((By.NAME, "firstName"))
+                    )
+                    first_name_input.send_keys("John")
+                    time.sleep(0.2)  # 减少等待时间
+                    
+                    last_name_input = self.driver.find_element(By.NAME, "lastName")
+                    last_name_input.send_keys("Doe")
+                    time.sleep(0.2)  # 减少等待时间
+                    
+                    # 点击继续按钮
+                    continue_button = self.driver.find_element(By.CSS_SELECTOR, "button.bg-brand-dark")
+                    self.driver.execute_script("arguments[0].click();", continue_button)
+                    
+                    # 等待页面变化
+                    try:
+                        self.wait.until(
+                            lambda driver: driver.current_url != current_url
+                        )
+                        logging.info("已离开姓名页面")
+                        return self.handle_onboarding()
+                    except TimeoutException:
+                        logging.error("等待页面跳转超时")
+                        return False
+                        
+                except Exception as e:
+                    logging.error(f"填写姓名时出错: {e}")
+                    return False
             
-            # 等待页面跳转到about页面
-            self.wait.until(lambda driver: ONBOARDING_ABOUT_URL in driver.current_url)
-            logging.info("正在处理about页面...")
+            # 处理任何需要skip的页面（about-user, skills, source等）
+            elif any(x in current_url for x in ["onboarding?page=about-user", "onboarding?page=skills", "onboarding?page=source", "/onboarding/source"]):
+                page_name = "source" if "source" in current_url else "about-user" if "about-user" in current_url else "skills"
+                logging.info(f"正在处理{page_name}页面...")
+                try:
+                    # 点击跳过按钮 - 使用更精确的选择器
+                    skip_button = self.wait.until(
+                        EC.presence_of_element_located((
+                            By.CSS_SELECTOR, 
+                            "button.border-brand-light.text-brand-light"
+                        ))
+                    )
+                    self.driver.execute_script("arguments[0].click();", skip_button)
+                    time.sleep(0.2)  # 减少等待时间
+                    
+                    # 等待页面变化
+                    try:
+                        # 等待页面完全加载
+                        self.wait.until(
+                            lambda driver: driver.execute_script('return document.readyState') == 'complete'
+                        )
+                        
+                        # 等待URL变化
+                        self.wait.until(
+                            lambda driver: driver.current_url != current_url
+                        )
+                        
+                        logging.info(f"已离开{page_name}页面，当前URL: {self.driver.current_url}")
+                        
+                        # 如果还在onboarding流程中，继续处理
+                        if "onboarding" in self.driver.current_url:
+                            return self.handle_onboarding()
+                        else:
+                            logging.info("注册流程完成")
+                            return True
+                            
+                    except TimeoutException:
+                        logging.error("等待页面跳转超时")
+                        return False
+                        
+                except Exception as e:
+                    logging.error(f"处理{page_name}页面时出错: {e}")
+                    return False
             
-            # 点击Skip按钮 - 使用更精确的CSS选择器
-            time.sleep(1)  # 等待页面加载
-            skip_button = self.wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit'].border-brand-light"))
-            )
-            logging.info("找到Skip按钮，尝试点击")
-            self.driver.execute_script("arguments[0].click();", skip_button)
-            logging.info("已点击Skip按钮")
-            
-            # 等待页面跳转到source页面
-            self.wait.until(lambda driver: ONBOARDING_SOURCE_URL in driver.current_url)
-            logging.info("正在完成注册流程...")
-            
-            # 点击最后的Skip按钮
-            time.sleep(1)
-            final_skip_button = self.wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit'].border-brand-light"))
-            )
-            self.driver.execute_script("arguments[0].click();", final_skip_button)
-            logging.info("已完成注册流程")
-            
-            # 注册成功后立即清理
-            self.cleanup()
-            return True
-            
+            else:
+                logging.error(f"未知的 onboarding 页面: {current_url}")
+                return False
+                
         except Exception as e:
-            logging.error(f"Onboarding process error: {e}")
-            self.cleanup()  # 出错时也进行清理
+            logging.error(f"处理 onboarding 时出错: {e}")
             return False
             
     def register(self, email, password):
         """Perform registration process"""
         try:
-            # Setup driver
-            if not self.setup_driver():
-                show_message("错误", "Chrome浏览器启动失败", type_="error")
-                return False
+            # 只在第一次调用时设置driver
+            if not self.driver:
+                if not self.setup_driver():
+                    show_message("错误", "Chrome浏览器启动失败", type_="error")
+                    return False
+                    
+                # 第一次打开注册页面
+                logging.info("正在打开注册页面...")
+                self.driver.get(REGISTER_URL)
+            else:
+                # 如果已经有driver，检查当前页面
+                if REGISTER_URL not in self.driver.current_url:
+                    logging.info("重新打开注册页面...")
+                    self.driver.get(REGISTER_URL)
             
-            # Open registration page
-            logging.info("正在打开注册页面...")
-            self.driver.get(REGISTER_URL)
-            
-            # Check page status
-            status = self.check_url_status()
-            if status == "EMAIL_EXISTS":
-                return "EMAIL_EXISTS"
-            elif not status:
+            # 等待页面和表单加载完成
+            try:
+                logging.info("等待页面加载...")
+                # 等待页面完全加载
+                self.wait.until(
+                    lambda driver: driver.execute_script('return document.readyState') == 'complete'
+                )
+                
+                # 等待表单和邮箱输入框出现
+                logging.info("等待表单加载...")
+                self.wait.until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "form"))
+                )
+                self.wait.until(
+                    EC.presence_of_element_located((By.NAME, "email"))
+                )
+            except Exception as e:
+                logging.error(f"等待页面加载完成时出错: {e}")
                 return False
             
             # Fill registration form
             logging.info("正在填写注册信息...")
             
-            # Email
-            email_input = self.wait.until(
-                EC.presence_of_element_located((By.NAME, "email"))
-            )
-            email_input.clear()
-            email_input.send_keys(email)
-            
-            # Password
-            password_input = self.wait.until(
-                EC.presence_of_element_located((By.NAME, "password"))
-            )
-            password_input.clear()
-            password_input.send_keys(password)
-            
-            # Confirm password
-            confirm_input = self.wait.until(
-                EC.presence_of_element_located((By.NAME, "confirmPassword"))
-            )
-            confirm_input.clear()
-            confirm_input.send_keys(password)
-            
-            # Accept terms
-            terms_checkbox = self.wait.until(
-                EC.presence_of_element_located((By.ID, "termsAccepted"))
-            )
-            if not terms_checkbox.is_selected():
-                self.driver.execute_script("arguments[0].click();", terms_checkbox)
+            try:
+                # Email
+                email_input = self.wait.until(
+                    EC.presence_of_element_located((By.NAME, "email"))
+                )
+                email_input.clear()
+                email_input.send_keys(email)
+                time.sleep(0.5)
                 
-            # Submit form
-            logging.info("正在提交注册信息...")
-            signup_button = self.wait.until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "button.bg-brand-dark"))
-            )
-            self.driver.execute_script("arguments[0].click();", signup_button)
-            
-            # 检查是否出现邮箱已存在的错误
-            try:
-                error_message = self.wait.until(
-                    EC.presence_of_element_located((By.XPATH, "//div[contains(text(), 'already associated with an account')]"))
+                # Password
+                password_input = self.wait.until(
+                    EC.presence_of_element_located((By.NAME, "password"))
                 )
-                if error_message:
-                    logging.warning(f"邮箱 {email} 已存在")
-                    return "EMAIL_EXISTS"
-            except TimeoutException:
-                pass  # 没有错误消息，继续注册流程
-            
-            # 检查是否跳转到了个人资料页面（说明已登录）
-            try:
-                if PROFILE_URL in self.driver.current_url:
-                    logging.warning(f"邮箱 {email} 已登录")
-                    return "EMAIL_EXISTS"
-            except:
-                pass
-            
-            # Handle onboarding process
-            if self.handle_onboarding():
-                show_message(
-                    "注册成功",
-                    f"账号：{email}\n密码：{password}\n请复制保存",
-                    type_="info"
+                password_input.clear()
+                password_input.send_keys(password)
+                time.sleep(0.5)
+                
+                # Confirm password
+                confirm_input = self.wait.until(
+                    EC.presence_of_element_located((By.NAME, "confirmPassword"))
                 )
-                return True
-            else:
+                confirm_input.clear()
+                confirm_input.send_keys(password)
+                time.sleep(0.5)
+                
+                # Accept terms
+                terms_checkbox = self.wait.until(
+                    EC.presence_of_element_located((By.ID, "termsAccepted"))
+                )
+                if not terms_checkbox.is_selected():
+                    self.driver.execute_script("arguments[0].click();", terms_checkbox)
+                    time.sleep(0.5)
+                
+                # Submit form
+                logging.info("正在提交注册信息...")
+                signup_button = self.wait.until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "button.bg-brand-dark"))
+                )
+                self.driver.execute_script("arguments[0].click();", signup_button)
+                
+                # 等待页面变化
+                try:
+                    # 等待页面完全加载
+                    self.wait.until(
+                        lambda driver: driver.execute_script('return document.readyState') == 'complete'
+                    )
+                    
+                    # 等待任意一个目标状态出现
+                    target_conditions = [
+                        lambda driver: "onboarding" in driver.current_url,  # 成功注册
+                        lambda driver: PROFILE_URL in driver.current_url,   # 已登录
+                        lambda driver: len(driver.find_elements(By.CSS_SELECTOR, "div.text-red-500")) > 0  # 错误消息
+                    ]
+                    
+                    # 持续检查直到满足任一条件
+                    max_retries = 60  # 最多等待60次
+                    retry_count = 0
+                    while retry_count < max_retries:
+                        for condition in target_conditions:
+                            try:
+                                if condition(self.driver):
+                                    # 找到目标状态，进行相应处理
+                                    current_url = self.driver.current_url
+                                    logging.info(f"检测到页面状态变化，当前URL: {current_url}")
+                                    
+                                    # 处理成功注册
+                                    if "onboarding" in current_url:
+                                        logging.info("检测到已跳转到 onboarding 页面")
+                                        # 继续处理onboarding流程，但不影响注册成功的判断
+                                        self.handle_onboarding()
+                                        show_message(
+                                            "注册成功",
+                                            f"账号：{email}\n密码：{password}\n请复制保存",
+                                            type_="info"
+                                        )
+                                        # 注册成功时才清理
+                                        self.cleanup()
+                                        return True
+                                    
+                                    # 处理已登录状态
+                                    if PROFILE_URL in current_url:
+                                        logging.info("检测到已跳转到个人资料页面")
+                                        logging.warning(f"邮箱 {email} 已登录")
+                                        return "EMAIL_EXISTS"
+                                    
+                                    # 处理错误消息
+                                    error_elements = self.driver.find_elements(By.CSS_SELECTOR, "div.text-red-500")
+                                    if error_elements:
+                                        for error in error_elements:
+                                            text = error.get_attribute('textContent') or error.text
+                                            logging.info(f"找到错误消息: {text}")
+                                            if "already associated with an account" in text:
+                                                logging.warning(f"邮箱 {email} 已存在")
+                                                return "EMAIL_EXISTS"
+                                        logging.error("存在其他错误消息")
+                                        self.cleanup()
+                                        return False
+                            except Exception as e:
+                                logging.warning(f"检查条件时出错: {e}")
+                                
+                        # 检查网络连接
+                        try:
+                            self.driver.execute_script("return navigator.onLine;")
+                        except Exception as e:
+                            logging.error("失去网络连接")
+                            self.cleanup()
+                            return "TIMEOUT"
+                            
+                        time.sleep(1)
+                        retry_count += 1
+                        if retry_count % 10 == 0:  # 每10秒输出一次等待信息
+                            logging.info(f"正在等待页面响应... ({retry_count}秒)")
+                    
+                    logging.warning("等待页面响应超时")
+                    self.cleanup()
+                    return "TIMEOUT"
+                    
+                except Exception as e:
+                    logging.error(f"等待页面响应时出错: {e}")
+                    self.cleanup()
+                    return False
+                    
+            except Exception as e:
+                logging.error(f"填写注册表单时出错: {e}")
+                logging.exception("详细错误信息:")
+                self.cleanup()
                 return False
-                
-        except Exception as e:
-            logging.error(f"Registration process error: {e}")
-            show_message("错误", f"注册过程出现错误：{str(e)}", type_="error")
-            return False
             
-        finally:
+        except Exception as e:
+            logging.error(f"注册过程出现错误: {e}")
+            logging.exception("详细错误信息:")
             self.cleanup()
+            return False

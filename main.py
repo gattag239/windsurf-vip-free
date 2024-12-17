@@ -26,7 +26,7 @@ class RegistrationManager:
         self.bot = None
         
     def start_registration(self, base_email, start_number, domain, password, headless):
-        """Start the registration process"""
+        """Start registration process"""
         try:
             # 保存参数
             self.base_email = base_email
@@ -35,58 +35,82 @@ class RegistrationManager:
             self.password = password
             
             # 创建注册机器人
-            self.bot = RegistrationBot(headless=not headless)  # 反转headless值
+            if not hasattr(self, 'bot') or self.bot is None:
+                self.bot = RegistrationBot(headless=not headless)  # 反转headless值
             
-            # 尝试注册循环
-            number = self.current_number
+            # 获取当前序号
+            current_index = self.current_number
+            max_retries = 10  # 最大重试次数
+            retry_count = 0
             
-            while True:
-                # 生成当前邮箱
-                email = format_email(self.base_email, number, self.domain)
-                logging.info(f"正在尝试注册账号: {email}")
+            while retry_count < max_retries:
+                # 生成邮箱
+                email = format_email(self.base_email, current_index, self.domain)
+                logging.info(f"开始注册账号 {email}")
                 
-                # 尝试注册
+                # 开始注册
                 result = self.bot.register(email, self.password)
                 
                 if result is True:
                     # 注册成功
-                    logger.info(f"账号 {email} 注册成功！")
+                    logger.info(f"账号 {email} 注册成功")
+                    self.current_number += 1
                     break
+                    
                 elif result == "EMAIL_EXISTS":
-                    # 邮箱已存在或已登录，自动增加序号重试
-                    logger.info(f"账号 {email} 已存在或已登录，尝试下一个序号")
-                    number += 1
+                    # 邮箱已存在，增加序号重试
+                    logging.info(f"账号 {email} 已存在，尝试下一个序号")
+                    current_index += 1
+                    retry_count += 1
                     continue
-                else:
-                    # 其他注册失败情况
+                    
+                elif result == "TIMEOUT":
+                    # 超时，询问是否重试当前账号
                     if show_message(
-                        "注册失败",
-                        "是否重试当前账号？",
+                        "等待超时",
+                        "页面响应超时，是否重试当前账号？",
                         type_="yesno"
                     ):
+                        logging.info(f"重试账号 {email}")
                         continue
                     else:
+                        logging.info("用户取消重试")
                         break
                         
+                else:
+                    # 其他错误
+                    show_message("错误", "注册过程出现错误", type_="error")
+                    break
+            
+            if retry_count >= max_retries:
+                show_message("提示", f"已尝试 {max_retries} 个序号都已存在，请更换邮箱前缀", type_="warning")
+            
         except Exception as e:
-            logger.error(f"Registration process error: {e}")
-            show_message("错误", f"注册过程出现错误：{str(e)}", type_="error")
+            logger.error(f"注册过程出现错误: {e}")
+            show_message("错误", "注册过程出现错误", type_="error")
             
         finally:
-            if self.bot:
-                self.bot.cleanup()
+            # 更新界面状态
+            pass
+            
+    def cleanup(self):
+        try:
+            clean_all_chrome_data()  
+        except Exception as e:
+            logging.error(f"Error during cleanup: {e}")
 
-def cleanup():
-    try:
-        clean_all_chrome_data()  
-    except Exception as e:
-        logging.error(f"Error during cleanup: {e}")
+    @classmethod
+    def cleanup(cls):
+        try:
+            clean_all_chrome_data()  
+        except Exception as e:
+            logging.error(f"Error during cleanup: {e}")
 
 def main():
     """Main entry point"""
     try:
-        # 清理所有Chrome相关数据
-        cleanup()
+        # 清理旧的Chrome数据
+        RegistrationManager.cleanup()
         
         # 创建注册管理器
         manager = RegistrationManager()
@@ -105,6 +129,10 @@ def main():
         logger.error(f"Program error: {e}")
         show_message("错误", f"程序运行错误：{str(e)}", type_="error")
         sys.exit(1)
+
+    finally:
+        # 程序退出时清理
+        RegistrationManager.cleanup()
 
 if __name__ == "__main__":
     try:

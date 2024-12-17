@@ -11,7 +11,7 @@ from config import (
     DEFAULT_PASSWORD,
     EMAIL_DOMAINS
 )
-from utils import format_email
+from utils import format_email, show_message, set_english_ime
 from logger import setup_logger
 from tkinter import messagebox
 import webbrowser
@@ -24,7 +24,7 @@ class RegistrationGUI:
         self.root = ttkb.Window(title=WINDOW_TITLE)
         self.root.geometry(WINDOW_GEOMETRY)  # 设置窗口位置
         self.root.resizable(True, True)  # 允许调整窗口大小
-        self.root.attributes('-topmost', False)  # 取消窗口置顶
+        self.root.attributes('-topmost', True)  # 设置窗口总在最上层
         
         # Configure grid
         for i in range(6):
@@ -67,9 +67,14 @@ class RegistrationGUI:
         
         # - Email prefix
         ttkb.Label(email_frame, text="主邮箱用户名：").grid(row=0, column=0, padx=5, pady=5)
-        self.email_prefix = ttkb.Entry(email_frame, width=20)
-        self.email_prefix.insert(0, DEFAULT_EMAIL_PREFIX)
+        self.prefix_var = tk.StringVar()
+        self.prefix_var.set(DEFAULT_EMAIL_PREFIX)
+        self.email_prefix = ttkb.Entry(email_frame, width=20, textvariable=self.prefix_var)
+        self.prefix_var.trace_add("write", self.update_preview)
         self.email_prefix.grid(row=0, column=1, padx=5, pady=5)
+        
+        # 设置邮箱输入框为英文输入法
+        self.email_prefix.bind('<FocusIn>', lambda e: self.set_english_ime())
         
         # - Email number
         ttkb.Label(email_frame, text="序号：").grid(row=0, column=2, padx=5, pady=5)
@@ -197,33 +202,36 @@ class RegistrationGUI:
         github_link.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/jayleehappy/windsurf-vip-free"))
         
         # Bind events
-        self.email_prefix.bind("<KeyRelease>", lambda e: self.update_preview())
         self.email_number.bind("<KeyRelease>", lambda e: self.update_preview())
         self.email_domain.bind("<<ComboboxSelected>>", lambda e: self.update_preview())
         
         # Initial preview update
         self.update_preview()
         
+    def update_preview(self, *args):
+        """更新邮箱预览"""
+        try:
+            prefix = self.prefix_var.get().strip()
+            number = self.email_number.get().strip()
+            domain = self.email_domain.get()
+            preview = format_email(prefix, number, domain)
+            self.account_preview.configure(state="normal")
+            self.account_preview.delete(0, tk.END)
+            self.account_preview.insert(0, preview)
+            self.account_preview.configure(state="readonly")
+        except Exception as e:
+            print(f"更新预览时出错: {e}")
+            
     def toggle_password_visibility(self):
         if self.show_password_var.get():
             self.password.configure(show="")
         else:
             self.password.configure(show="*")
             
-    def update_preview(self):
-        prefix = self.email_prefix.get()
-        number = self.email_number.get()
-        domain = self.email_domain.get()
-        preview = format_email(prefix, number, domain)
-        self.account_preview.configure(state="normal")
-        self.account_preview.delete(0, tk.END)
-        self.account_preview.insert(0, preview)
-        self.account_preview.configure(state="readonly")
-        
     def on_next(self):
         """Handle next button click"""
         self.register_callback(
-            base_email=self.email_prefix.get(),
+            base_email=self.prefix_var.get(),
             start_number=self.email_number.get(),
             domain=self.email_domain.get(),
             password=self.password.get(),
@@ -241,3 +249,7 @@ class RegistrationGUI:
     def run(self):
         """Start the GUI event loop"""
         self.root.mainloop()
+        
+    def set_english_ime(self):
+        """设置英文输入法"""
+        set_english_ime()
